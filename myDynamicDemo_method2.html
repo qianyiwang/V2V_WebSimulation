@@ -1,0 +1,208 @@
+<html>
+<head>
+	<title>Dynamic Demo -- Hear API</title>
+	<meta name="viewport" content="initial-scale=1.0, width=device-width" />
+  	<link rel="stylesheet" type="text/css"
+    	href="https://js.api.here.com/v3/3.0/mapsjs-ui.css" />
+  	<script type="text/javascript" charset="UTF-8"
+    	src="https://js.api.here.com/v3/3.0/mapsjs-core.js"></script>
+  	<script type="text/javascript" charset="UTF-8"
+    	src="https://js.api.here.com/v3/3.0/mapsjs-service.js"></script>
+  	<script type="text/javascript" charset="UTF-8"
+    	src="https://js.api.here.com/v3/3.0/mapsjs-ui.js"></script>
+  	<script type="text/javascript" charset="UTF-8"
+    	src="https://js.api.here.com/v3/3.0/mapsjs-mapevents.js"></script>
+	<style type="text/css">
+		div#container {width:100%;height:100%;background:gray;}
+		div#headprint{width: 100%;height: 10%;background: RoyalBlue;}
+		div#map{width:100%;height:70%;background: gray;}
+		div#input{width:15%;height:15%;background-color: rgb(150,150,150);float: left;}
+		div#upload{width:15%;height:15%;background-color: rgb(150,150,150);float: left;}
+		div#info{width:40%;height:15%;background-color: rgb(150,150,150);float: left;}
+		div#introduction{width: 30%;height: 15%;background-color: rgb(200,200,200);float: left;}
+		div#footprint{width: 100%;height: 5%;background: black;clear: both;text-align: center;}
+	</style>
+
+
+</head>
+<body>
+	
+	<div id="container">
+		<div id="headprint">
+			<p style="text-align: center; color:yellow;font-size:50">Trip Visulization Demo</p>
+		</div>
+		<div id="map"></div>
+		<div id="input">
+			Load the Data: <input type="button" value="Load Data" onclick="loadData()"><br/>
+			Watch the Demo: <input type="button" value="Demo" onclick="submitVal()">
+		</div>
+		<div id="upload">
+			<form action="upload_file.php" method="post" enctype="multipart/form-data">
+			<label for="file">Filename:</label>
+			<input type="file" name="file" id="file" /> 
+			<br />
+			<input type="submit" name="submit" value="Submit"/>
+			</form>
+		</div>
+		<div id="info" >
+			Info: </br> 
+			Remote car coordinates:<input type="text" id="hostCarCo"></br>
+			Host car coordinates:<input type="text" id="remoteCarCo"></br>
+			Conncetion status: <input type="text" id="conncetionStatus">
+		</div>
+		<div id="introduction">
+			red dots: coordinates of the host vehicle</br>
+			blue dots: coordinates of the remote vehicle</br>
+			yellow lines: the connection between two vehicles
+		</div>
+		<div id="footprint">
+			<p style="color:white">copy right: @qianyiw.net</p>
+		</div>
+	</div>
+	<script type="text/javascript">
+		var obj;
+		var i = 0;
+		var j = 0;
+		var platform = new H.service.Platform({
+		  app_id: 'DemoAppId01082013GAL',
+		  app_code: 'AJKnXv84fjrb0KIHawS0Tg',
+		  useCIT: true,
+		  useHTTPS: true
+		});
+		var defaultLayers = platform.createDefaultLayers();
+
+		// Step 2: initialize a map  - not specificing a location will give a whole world view.
+		var map = new H.Map(document.getElementById('map'), defaultLayers.normal.map);
+		// Step 3: make the map interactive
+		// MapEvents enables the event system
+		// Behavior implements default interactions for pan/zoom (also on mobile touch environments)
+		var behavior = new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
+
+		// Create the default UI components
+		var ui = H.ui.UI.createDefault(map, defaultLayers);
+
+		function loadData()
+		{
+			if (window.XMLHttpRequest)
+            {// code for IE7+, Firefox, Chrome, Opera, Safari
+            xmlhttp=new XMLHttpRequest();
+            
+            }
+          	else
+            {// code for IE6, IE5
+            xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+            }
+            xmlhttp.onreadystatechange=function()
+            {
+              if (xmlhttp.readyState==4 && xmlhttp.status==200)
+                {
+                    
+                    var response = xmlhttp.responseText;
+                    obj = JSON.parse(response);
+                    
+                }
+            }
+        xmlhttp.open("GET","loadData.php",true);
+        xmlhttp.send();
+        t =setTimeout("alert('Data has been loaded!')",2500);
+
+		}
+
+		function submitVal()
+		{   	
+			drawMap (map,obj.lat_trip2[0],obj.lng_trip2[0]);
+			drawTrip();
+		}
+
+		function drawTrip()
+		{
+			if (i<1602)
+			{
+				addCircleToMap(map,obj.lat_trip2[i],obj.lng_trip2[i],'rgba(255, 51, 0,0.6)');
+				document.getElementById("remoteCarCo").value = [obj.lat_trip2[i],obj.lng_trip2[i]];
+				document.getElementById("hostCarCo").value = "NaN";
+				document.getElementById("conncetionStatus").value = "No connection";
+			}
+			else if (i<4368&&i>4203)
+			{
+				addCircleToMap(map,obj.lat_trip2[i],obj.lng_trip2[i],'rgba(255, 51, 0,0.6)');
+				addCircleToMap(map,obj.lat_trip1[j],obj.lng_trip1[j],'rgba(51, 102, 204,0.6)');
+				addPolylineToMap(map,obj.lat_trip2[i],obj.lng_trip2[i],obj.lat_trip1[j],obj.lng_trip1[j]);
+				document.getElementById("remoteCarCo").value = [obj.lat_trip2[i],obj.lng_trip2[i]];
+				document.getElementById("hostCarCo").value = [obj.lat_trip1[j],obj.lng_trip1[j]];
+				document.getElementById("conncetionStatus").value = "connected";
+				j++;
+				
+			}
+			else
+			{
+				addCircleToMap(map,obj.lat_trip2[i],obj.lng_trip2[i],'rgba(255, 51, 0,0.6)');
+				addCircleToMap(map,obj.lat_trip1[j],obj.lng_trip1[j],'rgba(51, 102, 204,0.6)');
+				document.getElementById("remoteCarCo").value = [obj.lat_trip2[i],obj.lng_trip2[i]];
+				document.getElementById("hostCarCo").value = [obj.lat_trip1[j],obj.lng_trip1[j]];
+				document.getElementById("conncetionStatus").value = "No connection";
+
+				j++;
+			}
+			t =setTimeout("drawTrip()",5);
+			console.log(i);
+			console.log(j);
+			i++;
+		}
+
+		function viewTrip2()
+		{
+			
+		}
+
+		
+	    
+		//Here API
+		function putMarker(map,markerLat,markerLng)
+		{
+			
+			var myMarker = new H.map.Marker({lat:markerLat, lng:markerLng});
+	  		map.addObject(myMarker);
+	  		
+		}
+		function addCircleToMap(map,latVal,lngVal,circleColor)
+		{
+		  map.addObject(new H.map.Circle(
+		    {lat:latVal, lng:lngVal},
+		    5,
+		    {
+		      style: {
+		        strokeColor: circleColor, // Color of the perimeter
+		        lineWidth: 2,
+		        fillColor: circleColor  // Color of the circle
+		      }
+		    }
+		  ));
+		}
+
+		function addPolylineToMap(map,lat1,lng1,lat2,lng2) {
+		  var strip = new H.geo.Strip();
+		  //console.log(trip1Lat);
+		  strip.pushPoint({lat:lat1, lng:lng1});
+		  strip.pushPoint({lat:lat2, lng:lng2});
+		  map.addObject(new H.map.Polyline(
+		    strip, { style: { lineWidth: 1, strokeColor:"rgba(255,255,0,0.7)" }}
+		  ));
+		}
+
+		function drawMap (map,cenLat,cenLng) {
+		  // Center map on New York
+		  map.setCenter({lat: cenLat, lng: cenLng});
+		  map.setZoom(12);
+		  //putMarker(map,42.318278,-83.233047);
+		  // Show traffic tiles
+		  map.setBaseLayer(defaultLayers.normal.traffic);
+
+		  // Enable traffic incidents layer
+		  map.addLayer(defaultLayers.incidents);
+		}
+		drawMap(map,42.318278,-83.233047);
+	</script>
+
+</body>
+</html>

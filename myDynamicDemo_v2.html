@@ -1,0 +1,156 @@
+<html>
+<head>
+	<title>Dynamic Demo -- Hear API</title>
+	<meta name="viewport" content="initial-scale=1.0, width=device-width" />
+  	<link rel="stylesheet" type="text/css"
+    	href="https://js.api.here.com/v3/3.0/mapsjs-ui.css" />
+  	<script type="text/javascript" charset="UTF-8"
+    	src="https://js.api.here.com/v3/3.0/mapsjs-core.js"></script>
+  	<script type="text/javascript" charset="UTF-8"
+    	src="https://js.api.here.com/v3/3.0/mapsjs-service.js"></script>
+  	<script type="text/javascript" charset="UTF-8"
+    	src="https://js.api.here.com/v3/3.0/mapsjs-ui.js"></script>
+  	<script type="text/javascript" charset="UTF-8"
+    	src="https://js.api.here.com/v3/3.0/mapsjs-mapevents.js"></script>
+	<style type="text/css">
+		div#container {width:100%;height:100%;background:gray;}
+		div#headprint{width: 100%;height: 10%;background: RoyalBlue;}
+		div#map{width:100%;height:75%;background: gray;}
+		div#input{width:15%;height:10%;background-color: rgb(150,150,150);float: left;}
+		div#upload{width:15%;height:10%;background-color: rgb(150,150,150);float: left;}
+		div#info{width: 70%;height: 10%;background-color: rgb(200,200,200);float: left;}
+		div#footprint{width: 100%;height: 5%;background: black;clear: both;text-align: center;}
+	</style>
+
+
+</head>
+<body>
+	
+	<div id="container">
+		<div id="headprint">
+			<p style="text-align: center; color:yellow;font-size:50">Dynamic Demo--Here API</p>
+		</div>
+		<div id="map"></div>
+		<div id="input">
+			<p>Watch the Demo: <input type="button" value="Demo" onclick="submitVal()"></p>  
+		</div>
+		<div id="upload">
+			<form action="upload_file.php" method="post" enctype="multipart/form-data">
+			<label for="file">Filename:</label>
+			<input type="file" name="file" id="file" /> 
+			<br />
+			<input type="submit" name="submit" value="Submit"/>
+			</form>
+		</div>
+		<div id="info" >Info:</div>
+		<div id="footprint">
+			<p style="color:white">copy right: @qianyiw.net</p>
+		</div>
+	</div>
+	<script type="text/javascript">
+	var res1;
+	var flag1=0;
+		var response;
+		//var markerLat;
+		//var markerLng ;
+		var q=0;
+		var platform = new H.service.Platform({
+		  app_id: 'DemoAppId01082013GAL',
+		  app_code: 'AJKnXv84fjrb0KIHawS0Tg',
+		  useCIT: true,
+		  useHTTPS: true
+		});
+		var defaultLayers = platform.createDefaultLayers();
+
+		// Step 2: initialize a map  - not specificing a location will give a whole world view.
+		var map = new H.Map(document.getElementById('map'), defaultLayers.normal.map);
+		// Step 3: make the map interactive
+		// MapEvents enables the event system
+		// Behavior implements default interactions for pan/zoom (also on mobile touch environments)
+		var behavior = new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
+
+		// Create the default UI components
+		var ui = H.ui.UI.createDefault(map, defaultLayers);
+		var xmlhttp;
+
+		function submitVal()
+		{   
+	        viewTrip1();
+		}
+		function viewTrip1()
+		{
+			console.log(flag1);
+			var url = "connectDB.php?q="+q;
+			myAJAX(url);
+	        console.log(res1);
+	        if (res1!=null&&flag1==0)//draw the origin
+	        {
+        		drawMap (map,res1[0],res1[1]);
+        		putMarker(map,res1[0],res1[1]);
+        		flag1=1;
+	        }
+	        else if (res1!=null&&flag1==1)//draw path
+	        {
+	        	putMarker(map,res1[0],res1[1]);
+	        }
+	        
+			q=q+1;
+			t =setTimeout("viewTrip1()",100);
+		}
+		function myAJAX(url)
+			{
+				
+				if (window.XMLHttpRequest)
+	            {// code for IE7+, Firefox, Chrome, Opera, Safari
+	            xmlhttp=new XMLHttpRequest();
+	            
+	            }
+	          	else
+	            {// code for IE6, IE5
+	            xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+	            }
+	            xmlhttp.onreadystatechange=function()
+                {
+                  if (xmlhttp.readyState==4 && xmlhttp.status==200)
+                    {
+                        
+                        var response = xmlhttp.responseText;
+                        coordinate = eval(response);
+                        markerLat = Number(coordinate[0]);
+                        markerLng = Number(coordinate[1]);
+						res1 = postVal(markerLat,markerLng);
+                    }
+                }
+	            xmlhttp.open("GET",url,true);
+	            xmlhttp.send();
+	            return res1;
+			}
+		function postVal(markerLat,markerLng)
+		{
+			return [markerLat,markerLng];
+		}
+	    
+		//Here API
+		function putMarker(map,markerLat,markerLng)
+		{
+			
+			var myMarker = new H.map.Marker({lat:markerLat, lng:markerLng});
+	  		map.addObject(myMarker);
+	  		
+		}
+		function drawMap (map,cenLat,cenLng) {
+		  // Center map on New York
+		  map.setCenter({lat: cenLat, lng: cenLng});
+		  map.setZoom(18);
+		  //putMarker(map,42.318278,-83.233047);
+		  // Show traffic tiles
+		  map.setBaseLayer(defaultLayers.normal.traffic);
+
+		  // Enable traffic incidents layer
+		  map.addLayer(defaultLayers.incidents);
+		}
+		drawMap(map,42.318278,-83.233047);
+	</script>
+
+</body>
+</html>
